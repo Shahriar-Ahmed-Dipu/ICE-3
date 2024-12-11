@@ -1,0 +1,87 @@
+#docker-compose -p postgres-inventory-single -f docker-compose-multiple.yml up -d
+#the -p postgres name needs to be different
+#version: '3.9'
+
+services:
+
+  order-service:
+    image: order-service
+    #ports match with Dockerfile
+    #Left side is for localhost. Right side port is docker internal ports
+    ports:
+      - "8082:8082"
+    build:
+      context: ../../order-service #The directory where the dockerfile resides
+      dockerfile: ./Dockerfile
+    container_name: order-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - postgres-order
+    networks:
+      - spring
+
+  inventory-service:
+    image: inventory-service
+    #ports match with Dockerfile
+    #Left side is for localhost. Right side port is docker internal ports
+    ports:
+      - "8083:8083"
+    build:
+      context: ../../inventory-service #The directory where the dockerfile resides
+      dockerfile: ./Dockerfile
+    container_name: inventory-service
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      - postgres-inventory
+    networks:
+      - spring
+
+
+  postgres-inventory:
+    image: postgres
+    ports:
+      - "5434:5432" #For Inventory services
+    container_name: postgres-inventory
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=inventory-service
+    volumes:
+      - ./data/inventory:/var/lib/postgresql/data/
+      - ./init/inventory/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - spring
+
+  postgres-order:
+    image: postgres
+    ports:
+      - "5433:5432" #For order services
+    container_name: postgres-order
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=order-service
+    volumes:
+      - ./data/order:/var/lib/postgresql/data/
+      - ./init/order/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - spring
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "8888:80" #pgadmin default
+    container_name: pgadmin-dpage
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=101400761@domain.ca
+      - PGADMIN_DEFAULT_PASSWORD=password
+
+volumes:
+  postgres:
+    driver: local
+
+networks:
+  spring:
+    driver: bridge

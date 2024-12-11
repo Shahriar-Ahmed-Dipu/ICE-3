@@ -1,0 +1,26 @@
+#docker-compose -p postgres-single -f docker-compose-single.yml up -d
+version: '3.9'
+
+services:
+
+  postgres:
+    image: postgres
+    ports:
+      - "5433:5432" #Postgres default
+    container_name: postgres-single
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+    volumes:
+      - ./data/order:/var/lib/postgresql/data/
+      - ./init/order/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "8888:80" #pgadmin default
+    container_name: pgadmin-single
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=101400761@domain.ca
+      - PGADMIN_DEFAULT_PASSWORD=password
